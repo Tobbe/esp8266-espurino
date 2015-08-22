@@ -1,3 +1,4 @@
+V=1
 # This file is part of Espruino, a JavaScript interpreter for Microcontrollers
 #
 # Copyright (C) 2013 Gordon Williams <gw@pur3.co.uk>
@@ -45,6 +46,7 @@
 # MINISTM32_STRIVE=1
 # MINISTM32_ANGLED_VE=1
 # MINISTM32_ANGLED_VG=1
+ESP8266_ESP12=1                  # ESP8266 from Espressif
 # Or nothing for standard linux compile
 #
 # Also:
@@ -60,7 +62,6 @@
 #
 # WIZNET=1                # If compiling for a non-linux target that has internet support, use WIZnet support, not TI CC3000
 # ESP8266=1               # If compiling for a non-linux target that has internet support, use ESP8266 support, not TI CC3000
-
 ifndef SINGLETHREAD
 MAKEFLAGS=-j5 # multicore
 endif
@@ -72,7 +73,7 @@ CFLAGS=-Wall -Wextra -Wconversion -Werror=implicit-function-declaration
 LDFLAGS=-Winline
 OPTIMIZEFLAGS=
 #-fdiagnostics-show-option - shows which flags can be used with -Werror
-DEFINES+=-DGIT_COMMIT=$(shell git log -1 --format="%H")
+#DEFINES+=-DGIT_COMMIT=$(shell git log -1 --format="%H")
 
 # Espruino flags...
 USE_MATH=1
@@ -98,8 +99,10 @@ DEFINES += -DBUILDNUMBER=\"$(COMMITS_SINCE_RELEASE)\"
 endif
 
 
-CWD = $(shell pwd)
+#CWD = $(shell pwd)
+CWD = $(CURDIR)
 ROOT = $(CWD)
+$(info "Root = $(ROOT))
 PRECOMPILED_OBJS=
 PLATFORM_CONFIG_FILE=gen/platform_config.h
 BASEADDRESS=0x08000000
@@ -415,6 +418,9 @@ BOARD=LCTECH_STM32F103RBT6
 STLIB=STM32F10X_MD
 PRECOMPILED_OBJS+=$(ROOT)/targetlibs/stm32f1/lib/startup_stm32f10x_md.o
 OPTIMIZEFLAGS+=-Os
+else ifdef ESP8266_ESP12
+EMBEDDED=1
+BOARD=ESP8266_ESP12
 else
 ifeq ($(shell uname -m),armv6l)
 RASPBERRYPI=1 # just a guess
@@ -486,6 +492,7 @@ endif
 # ---------------------------------------------------------------------------------
 
 PROJ_NAME=$(shell python scripts/get_board_info.py $(BOARD) "common.get_board_binary_name(board)"  | sed -e "s/.bin$$//")
+#$(error "PROJ_NAME=$(PROJ_NAME)")
 ifeq ($(PROJ_NAME),)
 $(error Unable to work out binary name (PROJ_NAME))
 endif
@@ -1217,11 +1224,6 @@ export OBJCOPY=$(CCPREFIX)objcopy
 export OBJDUMP=$(CCPREFIX)objdump
 export GDB=$(CCPREFIX)gdb
 
-
-.PHONY:  proj
-
-all: 	 proj
-
 ifeq ($(V),1)
         quiet_=
         Q=
@@ -1231,6 +1233,10 @@ else
   export SILENT=1
 endif
 
+
+.PHONY:  proj
+
+all: proj
 
 $(WRAPPERFILE): scripts/build_jswrapper.py $(WRAPPERSOURCES)
 	@echo Generating JS wrappers
