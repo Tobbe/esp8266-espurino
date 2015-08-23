@@ -66,19 +66,19 @@ Copyright 1984, 1995, 2000 by Stephen L. Moshier
 
 #ifdef UNK
 
-const static double P[] = {
+static const double P[] = {
  1.26177193074810590878E-4,
  3.02994407707441961300E-2,
  9.99999999999999999910E-1,
 };
-const static double Q[] = {
+static const double Q[] = {
  3.00198505138664455042E-6,
  2.52448340349684104192E-3,
  2.27265548208155028766E-1,
  2.00000000000000000009E0,
 };
-const static double C1 = 6.93145751953125E-1;
-const static double C2 = 1.42860682030941723212E-6;
+static const double C1 = 6.93145751953125E-1;
+static const double C2 = 1.42860682030941723212E-6;
 #endif
 
 #ifdef DEC
@@ -184,7 +184,7 @@ if( x < MINLOG )
  *   = e**( g + n loge(2) )
  */
 px = floor( LOG2E * x + 0.5 ); /* floor() truncates toward -infinity. */
-n = px;
+n = (int)px;
 x -= px * C1;
 x -= px * C2;
 
@@ -193,8 +193,8 @@ x -= px * C2;
  * e**x = 1 + 2x P(x**2)/( Q(x**2) - P(x**2) )
  */
 xx = x * x;
-px = x * polevl( xx, P, 2 );
-x =  px/( polevl( xx, Q, 3 ) - px );
+px = x * polevl( xx, (void *)P, 2 );
+x =  px/( polevl( xx, (void *)Q, 3 ) - px );
 x = 1.0 + 2.0 * x;
 
 /* multiply by power of 2 */

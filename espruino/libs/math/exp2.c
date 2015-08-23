@@ -59,12 +59,12 @@ Copyright 1984, 1995, 2000 by Stephen L. Moshier
 #include "mconf.h"
 
 #ifdef UNK
-const static double P[] = {
+static const double P[] = {
  2.30933477057345225087E-2,
  2.02020656693165307700E1,
  1.51390680115615096133E3,
 };
-const static double Q[] = {
+static const double Q[] = {
 /* 1.00000000000000000000E0,*/
  2.33184211722314911771E2,
  4.36821166879210612817E3,
@@ -165,7 +165,7 @@ if( x < MINL2 )
 xx = x;	/* save x */
 /* separate into integer and fractional parts */
 px = floor(x+0.5);
-n = px;
+n = (short int)px;
 x = x - px;
 
 /* rational approximation
@@ -173,8 +173,8 @@ x = x - px;
  * where xx = x**2
  */
 xx = x * x;
-px = x * polevl( xx, P, 2 );
-x =  px / ( p1evl( xx, Q, 2 ) - px );
+px = x * polevl( xx, (void *)P, 2 );
+x =  px / ( p1evl( xx, (void *)Q, 2 ) - px );
 x = 1.0 + ldexp( x, 1 );
 
 /* scale by power of 2 */

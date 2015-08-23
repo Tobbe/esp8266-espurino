@@ -344,7 +344,7 @@ ieeedon:
 
 i -= 0x3fe;
 *pw2 = i;
-*q &= 0x800f;
+*q &= (short int)0x800f;
 *q |= 0x3fe0;
 return( u.y );
 #endif
@@ -428,7 +428,7 @@ if( e < 1 )
 #ifdef DENORMAL
 	if( e < -53 )
 		return(0.0);
-	*q &= 0x800f;
+	*q &= (short int)0x800f;
 	*q |= 0x10;
 	/* For denormals, significant bits may be lost even
 	   when dividing by 2.  Construct 2^-(1-e) so the result
@@ -445,8 +445,8 @@ else
 	*q &= 0x807f;	/* strip all exponent bits */
 	*q |= (e & 0xff) << 7;
 #else
-	*q &= 0x800f;
-	*q |= (e & 0x7ff) << 4;
+	*q &= (short int)0x800f;
+	*q |= (short int)((e & 0x7ff) << 4);
 #endif
 	return(u.y);
 	}

@@ -323,7 +323,7 @@ else
 	}
 
 z = x*x;
-#if DEC
+#if defined DEC && DEC
 y = x * ( z * polevl( x, P, 5 ) / p1evl( x, Q, 6 ) ) - ldexp( z, -1 );
 #else
 y = x * ( z * polevl( x, P, 5 ) / p1evl( x, Q, 5 ) ) - ldexp( z, -1 );

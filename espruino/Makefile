@@ -46,7 +46,7 @@ V=1
 # MINISTM32_STRIVE=1
 # MINISTM32_ANGLED_VE=1
 # MINISTM32_ANGLED_VG=1
-ESP8266_ESP12=1                  # ESP8266 from Espressif
+# ESP8266_ESP12=1                  # ESP8266 from Espressif
 # Or nothing for standard linux compile
 #
 # Also:
@@ -102,7 +102,6 @@ endif
 #CWD = $(shell pwd)
 CWD = $(CURDIR)
 ROOT = $(CWD)
-$(info "Root = $(ROOT))
 PRECOMPILED_OBJS=
 PLATFORM_CONFIG_FILE=gen/platform_config.h
 BASEADDRESS=0x08000000
@@ -421,6 +420,8 @@ OPTIMIZEFLAGS+=-Os
 else ifdef ESP8266_ESP12
 EMBEDDED=1
 BOARD=ESP8266_ESP12
+OPTIMIZEFLAGS+=-Os
+CFLAGS+=-std=gnu99 -fno-builtin -Wno-maybe-uninitialized -Wno-old-style-declaration -Wno-conversion -Wno-unused-variable -Wno-unused-parameter -Wno-ignored-qualifiers -Wno-discarded-qualifiers -Wno-float-conversion -fno-strict-aliasing -Wno-type-limits -Wno-unused-function -Wpointer-arith -Wundef -Werror -Wl,EL -fno-inline-functions -nostdlib -mlongcalls -mtext-section-literals -D__ETS__ -DICACHE_FLASH
 else
 ifeq ($(shell uname -m),armv6l)
 RASPBERRYPI=1 # just a guess
@@ -1215,6 +1216,10 @@ endif
 ifdef NRF52
 LDFLAGS += --specs=nano.specs -lc -lnosys
 endif # NRF52
+
+ifdef ESP8266_ESP12
+CCPREFIX=xtensa-lx106-elf-
+endif # ESP8266_ESP12
 
 export CC=$(CCPREFIX)gcc
 export LD=$(CCPREFIX)gcc

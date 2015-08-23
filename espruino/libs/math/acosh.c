@@ -54,14 +54,14 @@ Copyright 1984, 1995, 2000 by Stephen L. Moshier
 #include "mconf.h"
 
 #ifdef UNK
-const static double P[] = {
+static const  double P[] = {
  1.18801130533544501356E2,
  3.94726656571334401102E3,
  3.43989375926195455866E4,
  1.08102874834699867335E5,
  1.10855947270161294369E5
 };
-const static double Q[] = {
+static const double Q[] = {
 /* 1.00000000000000000000E0,*/
  1.86145380837903397292E2,
  4.15352677227719831579E3,
@@ -158,7 +158,7 @@ z = x - 1.0;
 
 if( z < 0.5 )
 	{
-	a = sqrt(z) * (polevl(z, P, 4) / p1evl(z, Q, 5) );
+	a = sqrt(z) * (polevl(z, (void *)P, 4) / p1evl(z, (void *)Q, 5) );
 	return( a );
 	}
 

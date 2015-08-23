@@ -116,7 +116,7 @@ unsigned short s, t;
  */
 ranwh();
 unkans.d = sx/30269.0  +  sy/30307.0  +  sz/30323.0;
-r = unkans.d;
+r = (unsigned short)unkans.d;
 unkans.d -= r;
 unkans.d += 1.0;
 

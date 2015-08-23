@@ -58,7 +58,7 @@ static char fname[] = {"log"};
  * 1/sqrt(2) <= x < sqrt(2)
  */
 #ifdef UNK
-const static double P[] = {
+static const  double P[] = {
  1.01875663804580931796E-4,
  4.97494994976747001425E-1,
  4.70579119878881725854E0,
@@ -66,7 +66,7 @@ const static double P[] = {
  1.79368678507819816313E1,
  7.70838733755885391666E0,
 };
-const static double Q[] = {
+static const  double Q[] = {
 /* 1.00000000000000000000E0, */
  1.12873587189167450590E1,
  4.52279145837532221105E1,
@@ -323,7 +323,7 @@ else
 
 /* rational form */
 z = x*x;
-#if DEC
+#if defined DEC && DEC
 y = x * ( z * polevl( x, P, 5 ) / p1evl( x, Q, 6 ) );
 #else
 y = x * ( z * polevl( x, P, 5 ) / p1evl( x, Q, 5 ) );

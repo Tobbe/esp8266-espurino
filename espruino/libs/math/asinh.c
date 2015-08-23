@@ -44,14 +44,14 @@ Copyright 1984, 1995, 2000 by Stephen L. Moshier
 #include "mconf.h"
 
 #ifdef UNK
-const static double P[] = {
+static const double P[] = {
 -4.33231683752342103572E-3,
 -5.91750212056387121207E-1,
 -4.37390226194356683570E0,
 -9.09030533308377316566E0,
 -5.56682227230859640450E0
 };
-const static double Q[] = {
+static const double Q[] = {
 /* 1.00000000000000000000E0,*/
  1.28757002067426453537E1,
  4.86042483805291788324E1,
@@ -153,7 +153,7 @@ if( x > 1.0e8 )
 z = x * x;
 if( x < 0.5 )
 	{
-	a = ( polevl(z, P, 4)/p1evl(z, Q, 4) ) * z;
+	a = ( polevl(z, (void *)P, 4)/p1evl(z, (void *)Q, 4) ) * z;
 	a = a * x  +  x;
 	if( sign < 0 )
 		a = -a;

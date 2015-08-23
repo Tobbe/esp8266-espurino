@@ -55,24 +55,24 @@ Copyright 1984, 1991, 2000 by Stephen L. Moshier
 #include "mconf.h"
 
 #ifdef UNK
-const static double P[] = {
+static const double P[] = {
  4.09962519798587023075E-2,
  1.17452732554344059015E1,
  4.06717289936872725516E2,
  2.39423741207388267439E3,
 };
-const static double Q[] = {
+static const double Q[] = {
 /* 1.00000000000000000000E0,*/
  8.50936160849306532625E1,
  1.27209271178345121210E3,
  2.07960819286001865907E3,
 };
 /* const static double LOG102 = 3.01029995663981195214e-1; */
-const static double LOG210 = 3.32192809488736234787e0;
-const static double LG102A = 3.01025390625000000000E-1;
-const static double LG102B = 4.60503898119521373889E-6;
+static const double LOG210 = 3.32192809488736234787e0;
+static const double LG102A = 3.01025390625000000000E-1;
+static const double LG102B = 4.60503898119521373889E-6;
 /* const static double MAXL10 = 38.230809449325611792; */
-const static double MAXL10 = 308.2547155599167;
+static const  double MAXL10 = 308.2547155599167;
 #endif
 
 #ifdef DEC
@@ -203,7 +203,7 @@ if( x < -MAXL10 )	/* Would like to use MINLOG but can't */
  *   = 10**( g + n log10(2) )
  */
 px = floor( LOG210 * x + 0.5 );
-n = px;
+n = (short int)px;
 x -= px * LG102A;
 x -= px * LG102B;
 
@@ -212,8 +212,8 @@ x -= px * LG102B;
  * 10**x = 1 + 2x P(x**2)/( Q(x**2) - P(x**2) )
  */
 xx = x * x;
-px = x * polevl( xx, P, 3 );
-x =  px/( p1evl( xx, Q, 3 ) - px );
+px = x * polevl( xx, (void *)P, 3 );
+x =  px/( p1evl( xx, (void *)Q, 3 ) - px );
 x = 1.0 + ldexp( x, 1 );
 
 /* multiply by power of 2 */

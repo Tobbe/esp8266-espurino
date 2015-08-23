@@ -44,8 +44,8 @@ Copyright 1984, 1995, 2000 by Stephen L. Moshier
 #include "mconf.h"
 #ifdef ANSIPROT
 static void cchsh ( double x, double *c, double *s );
-const static double redupi ( double x );
-const static double ctans ( cmplx *z );
+static const double redupi ( double x );
+static const double ctans ( cmplx *z );
 /* These are supposed to be in some standard place. */
 double fabs (double);
 double sqrt (double);
@@ -63,16 +63,16 @@ void cadd ( cmplx *, cmplx *, cmplx * );
 void cmul ( cmplx *, cmplx *, cmplx * );
 void csqrt ( cmplx *, cmplx * );
 static void cchsh ( double, double *, double * );
-const static double redupi ( double );
-const static double ctans ( cmplx * );
+static const double redupi ( double );
+static const double ctans ( cmplx * );
 void clog ( cmplx *, cmplx * );
 void casin ( cmplx *, cmplx * );
 void cacos ( cmplx *, cmplx * );
 void catan ( cmplx *, cmplx * );
 #else
 static void cchsh();
-const static double redupi();
-const static double ctans();
+static const double redupi();
+static const double ctans();
 double cabs(), fabs(), sqrt(), pow();
 double log(), exp(), atan2(), cosh(), sinh();
 double asin(), sin(), cos();
@@ -387,9 +387,9 @@ w->i = -sinh( 2.0 * z->i ) / d;
 /* Program to subtract nearest integer multiple of PI */
 /* extended precision value of PI: */
 #ifdef UNK
-const static double DP1 = 3.14159265160560607910E0;
-const static double DP2 = 1.98418714791870343106E-9;
-const static double DP3 = 1.14423774522196636802E-17;
+static const double DP1 = 3.14159265160560607910E0;
+static const double DP2 = 1.98418714791870343106E-9;
+static const double DP3 = 1.14423774522196636802E-17;
 #endif
 
 #ifdef DEC
@@ -425,7 +425,7 @@ static unsigned short P3[] = {
 #define DP3 *(double *)P3
 #endif
 
-const static double redupi(x)
+static const double redupi(x)
 double x;
 {
 double t;
@@ -437,7 +437,7 @@ if( t >= 0.0 )
 else
 	t -= 0.5;
 
-i = t;	/* the multiple */
+i = (long)t;	/* the multiple */
 t = i;
 t = ((x - t * DP1) - t * DP2) - t * DP3;
 return(t);
@@ -445,7 +445,7 @@ return(t);
 
 /*  Taylor series expansion for cosh(2y) - cos(2x)	*/
 
-const static double ctans(z)
+static const double ctans(z)
 cmplx *z;
 {
 double f, x, x2, y, y2, rn, t;

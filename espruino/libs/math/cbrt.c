@@ -43,10 +43,10 @@ Copyright 1984, 1991, 2000 by Stephen L. Moshier
 
 #include "mconf.h"
 
-const static double CBRT2  = 1.2599210498948731647672;
-const static double CBRT4  = 1.5874010519681994747517;
-const static double CBRT2I = 0.79370052598409973737585;
-const static double CBRT4I = 0.62996052494743658238361;
+static const double CBRT2  = 1.2599210498948731647672;
+static const double CBRT4  = 1.5874010519681994747517;
+static const double CBRT2I = 0.79370052598409973737585;
+static const double CBRT4I = 0.62996052494743658238361;
 
 #ifdef ANSIPROT
 extern double frexp ( double, int * );

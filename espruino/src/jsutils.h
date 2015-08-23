@@ -128,7 +128,7 @@ extern int isfinite ( double );
   #endif
 #endif
 
-#if __WORDSIZE == 64
+#if defined __WORDSIZE && __WORDSIZE == 64
 // 64 bit needs extra space to be able to store a function pointer
 #define JSVAR_DATA_STRING_LEN  8
 #else
@@ -206,6 +206,9 @@ typedef int64_t JsSysTime;
 // isn't in the same file
 #define ALWAYS_INLINE
 #endif
+// Fix ... this is wrong - @kolban
+#undef ALWAYS_INLINE
+#define ALWAYS_INLINE
 
 /// Maximum amount of locks we ever expect to have on a variable (this could limit recursion) must be 2^n-1
 #define JSV_LOCK_MAX  15

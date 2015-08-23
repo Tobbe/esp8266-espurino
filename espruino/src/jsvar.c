@@ -61,8 +61,9 @@ JsVar *_jsvGetAddressOf(JsVarRef ref) {
 JsVarRef jsvGetFirstChild(const JsVar *v) { return (JsVarRef)(v->varData.ref.firstChild | (((v->varData.ref.pack)&JSVARREF_PACKED_BIT_MASK))<<8); }
 JsVarRefSigned jsvGetFirstChildSigned(const JsVar *v) {
   JsVarRefSigned r = (JsVarRefSigned)jsvGetFirstChild(v);
-  if (r & (1<<(JSVARREF_PACKED_BITS+7)))
-    r -= 1<<(JSVARREF_PACKED_BITS+8);
+  if (r & (1<<(JSVARREF_PACKED_BITS+7))) {
+    r -= (JsVarRefSigned)( 1<<(JSVARREF_PACKED_BITS+8));
+  }
   return r;
 }
 JsVarRef jsvGetLastChild(const JsVar *v) { return (JsVarRef)(v->varData.ref.lastChild | (((v->varData.ref.pack >> (JSVARREF_PACKED_BITS*1))&JSVARREF_PACKED_BIT_MASK))<<8); }
@@ -1963,7 +1964,7 @@ JsVar *jsvFindChildFromString(JsVar *parent, const char *name, bool addIfNotFoun
     // Don't Lock here, just use GetAddressOf - to try and speed up the finding
     // TODO: We can do this now, but when/if we move to cacheing vars, it'll break
     JsVar *child = jsvGetAddressOf(childref);
-    if (*(int*)fastCheck==*(int*)child->varData.str && // speedy check of first 4 bytes
+    if (*(int*)(fastCheck) == *(int*)(child->varData.str) && // speedy check of first 4 bytes
         jsvIsStringEqual(child, name)) {
       // found it! unlock parent but leave child locked
       return jsvLockAgain(child);
@@ -2283,7 +2284,7 @@ JsVar *jsvGetArrayItem(const JsVar *arr, JsVarInt index) {
 // Makes sure all of itemPtr either contains a JsVar or 0
 void jsvGetArrayItems(const JsVar *arr, unsigned int itemCount, JsVar **itemPtr) {
   JsvObjectIterator it;
-  jsvObjectIteratorNew(&it, arr);
+  jsvObjectIteratorNew(&it, (JsVar *)arr);
   unsigned int i = 0;
   while (jsvObjectIteratorHasValue(&it)) {
     if (i<itemCount)
@@ -2915,7 +2916,7 @@ bool jsvGarbageCollect() {
         // work backwards, so our free list is in the right order
         unsigned int count = 1 + (unsigned int)jsvGetFlatStringBlocks(var);
         while (count-- > 0) {
-          var = jsvGetAddressOf(i+count);
+          var = (JsVar *)jsvGetAddressOf((JsVarRef)(i+count));
           var->flags = JSV_UNUSED;
           // add this to our free list
           jsvSetNextSibling(var, jsVarFirstEmpty);

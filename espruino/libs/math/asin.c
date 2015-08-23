@@ -94,7 +94,7 @@ Copyright 1984, 1995, 2000 by Stephen L. Moshier
    0 <= x <= 0.625
    Peak relative error = 1.2e-18  */
 #if UNK
-const static double P[6] = {
+static const double P[6] = {
  4.253011369004428248960E-3,
 -6.019598008014123785661E-1,
  5.444622390564711410273E0,
@@ -102,7 +102,7 @@ const static double P[6] = {
  1.956261983317594739197E1,
 -8.198089802484824371615E0,
 };
-const static double Q[5] = {
+static const double Q[5] = {
 /* 1.000000000000000000000E0, */
 -1.474091372988853791896E1,
  7.049610280856842141659E1,
@@ -111,7 +111,7 @@ const static double Q[5] = {
 -4.918853881490881290097E1,
 };
 #endif
-#if DEC
+#if defined DEC && DEC
 static short P[24] = {
 0036213,0056330,0057244,0053234,
 0140032,0015011,0114762,0160255,
@@ -129,7 +129,7 @@ static short Q[20] = {
 0141504,0140420,0050660,0036543,
 };
 #endif
-#if IBMPC
+#if defined IBMPC && IBMBPC
 static short P[24] = {
 0x8ad3,0x0bd4,0x6b9b,0x3f71,
 0x5c16,0x333e,0x4341,0xbfe3,
@@ -147,7 +147,7 @@ static short Q[20] = {
 0x07ac,0x0a36,0x9822,0xc048,
 };
 #endif
-#if MIEEE
+#if defined MIEEE && MIEEE
 static short P[24] = {
 0x3f71,0x6b9b,0x0bd4,0x8ad3,
 0xbfe3,0x4341,0x333e,0x5c16,
@@ -170,14 +170,14 @@ static short Q[20] = {
    0 <= x <= 0.5
    Peak relative error = 4.2e-18  */
 #if UNK
-const static double R[5] = {
+static const double R[5] = {
  2.967721961301243206100E-3,
 -5.634242780008963776856E-1,
  6.968710824104713396794E0,
 -2.556901049652824852289E1,
  2.853665548261061424989E1,
 };
-const static double S[4] = {
+static const double S[4] = {
 /* 1.000000000000000000000E0, */
 -2.194779531642920639778E1,
  1.470656354026814941758E2,
@@ -185,7 +185,7 @@ const static double S[4] = {
  3.424398657913078477438E2,
 };
 #endif
-#if DEC
+#if defined DEC && DEC
 static short R[20] = {
 0036102,0077034,0142164,0174103,
 0140020,0036222,0147711,0044173,
@@ -201,7 +201,7 @@ static short S[16] = {
 0042253,0034115,0102662,0022757,
 };
 #endif
-#if IBMPC
+#if defined IBMPC && IBMPC
 static short R[20] = {
 0x9f08,0x988e,0x4fc3,0x3f68,
 0x290f,0x59f9,0x0792,0xbfe2,
@@ -217,7 +217,7 @@ static short S[16] = {
 0x44be,0xb0b6,0x6709,0x4075,
 };
 #endif
-#if MIEEE
+#if defined MIEEE && MIEEE
 static short R[20] = {
 0x3f68,0x4fc3,0x988e,0x9f08,
 0xbfe2,0x0792,0x59f9,0x290f,
@@ -279,7 +279,7 @@ if( a > 0.625 )
 	{
 	/* arcsin(1-x) = pi/2 - sqrt(2x)(1+R(x))  */
 	zz = 1.0 - a;
-	p = zz * polevl( zz, R, 4)/p1evl( zz, S, 4);
+	p = zz * polevl( zz, (void *)R, 4)/p1evl( zz, (void *)S, 4);
 	zz = sqrt(zz+zz);
 	z = PIO4 - zz;
 	zz = zz * p - MOREBITS;
@@ -293,7 +293,7 @@ else
 		return(x);
 		}
 	zz = a * a;
-	z = zz * polevl( zz, P, 5)/p1evl( zz, Q, 5);
+	z = zz * polevl( zz, (void *)P, 5)/p1evl( zz, (void *)Q, 5);
 	z = a * z + a;
 	}
 if( sign < 0 )
