@@ -1242,15 +1242,40 @@ ifdef NRF52
 LDFLAGS += --specs=nano.specs -lc -lnosys
 endif # NRF52
 
+#
+# Definitions for the build of the ESP8266
+#
 ifdef ESP8266_ESP12
-#
+
 # The Root of the ESP8266_SDK distributed by Espressif
-#
 ESP8266_SDK_ROOT=C:/Users/IBM_ADMIN/Documents/RaspberryPi/ESP8266/libs/esp_iot_sdk_v1.3.0_15_08_08/esp_iot_sdk_v1.3.0
+
+# The pefix for the xtensa toolchain
 CCPREFIX=xtensa-lx106-elf-
-LDFLAGS += -LC:/Espressif/ESP8266_SDK/lib -T$(ESP8266_SDK_ROOT)/ld/eagle.app.v6.ld -nostdlib -Wl,--no-check-sections -u call_user_start -Wl,-static -Wl,--start-group -lc -lgcc -lhal -lphy -lpp -lnet80211 -llwip -lwpa -lmain -Wl,--end-group
-SOURCES += $(ROOT)/targets/esp8266/uart.c $(ROOT)/targets/esp8266/user_main.c
-INCLUDE += -I$(ESP8266_SDK_ROOT)/include -I$(ROOT)/targets/esp8266
+
+# Extra flags passed to the linker
+LDFLAGS += -L$(ESP8266_SDK_ROOT)/lib \
+-T$(ESP8266_SDK_ROOT)/ld/eagle.app.v6.ld \
+-nostdlib \
+-Wl,--no-check-sections \
+-u call_user_start \
+-Wl,-static \
+-Wl,--start-group \
+-lc -lgcc -lhal -lphy -lpp -lnet80211 -llwip -lwpa -lmain \
+-Wl,--end-group
+
+# Extra source files specific to the ESP8266
+SOURCES += $(ROOT)/targets/esp8266/uart.c \
+$(ROOT)/targets/esp8266/user_main.c
+
+# The path to the tool used for building the firmware and flashing
+ESPTOOL_CK = C:\Espressif\utils\esptool-ck
+
+# Extra include directories specific to the ESP8266
+INCLUDE += -I$(ESP8266_SDK_ROOT)/include \
+-I$(ROOT)/targets/esp8266
+
+# End of ESP8266 definitions
 endif # ESP8266_ESP12
 
 export CC=$(CCPREFIX)gcc
@@ -1310,6 +1335,9 @@ quiet_obj_to_bin= GEN $(PROJ_NAME).$2
 %.o: %.c $(PLATFORM_CONFIG_FILE) $(PININFOFILE).h
 	@echo $($(quiet_)compile)
 	@$(call compile)
+ifdef ESP8266_ESP12
+	$(OBJCOPY) --rename-section .text=.irom0.text --rename-section .literal=.irom0.literal $@
+endif
 
 .cpp.o: $(PLATFORM_CONFIG_FILE) $(PININFOFILE).h
 	@echo $($(quiet_)compile)
@@ -1351,10 +1379,16 @@ ifndef TRAVIS
 	bash scripts/check_size.sh $(PROJ_NAME).bin
 endif
 
+ifndef ESP8266_ESP12
 proj: $(PROJ_NAME).lst $(PROJ_NAME).bin $(PROJ_NAME).hex
+else
+proj: $(PROJ_NAME).elf
+endif
+
 ifdef ARDUINO_AVR
 proj: $(PROJ_NAME).hex
 endif
+
 #proj: $(PROJ_NAME).lst $(PROJ_NAME).hex $(PROJ_NAME).srec $(PROJ_NAME).bin
 
 flash: all
@@ -1368,6 +1402,11 @@ else ifdef OLIMEXINO_STM32_BOOTLOADER
 else ifdef NUCLEO
 	if [ -d "/media/$(USER)/NUCLEO" ]; then cp $(PROJ_NAME).bin /media/$(USER)/NUCLEO;sync; fi
 	if [ -d "/media/NUCLEO" ]; then cp $(PROJ_NAME).bin /media/NUCLEO;sync; fi
+else ifdef ESP8266_ESP12
+# Handle ESP8266 flashing
+	$(Q)$(ESPTOOL_CK) -eo $(PROJ_NAME).elf -bo ESP8266_0x00000.bin -bs .text -bs .data -bs .rodata -bs .iram0.text -bc -ec
+	$(Q)$(ESPTOOL_CK) -eo $(PROJ_NAME).elf -es .irom0.text ESP8266_0x10000.bin -ec
+# End of handle ESP8266 flashing
 else
 	echo ST-LINK flash
 	st-flash --reset write $(PROJ_NAME).bin $(BASEADDRESS)
