@@ -341,6 +341,8 @@ uart_init(UartBautRate uart0_br, UartBautRate uart1_br)
     os_timer_setfn(&buff_timer_t, uart_test_rx , NULL);   //a demo to process the data in uart rx buffer
     os_timer_arm(&buff_timer_t,10,1);
     #endif
+    // Set the default debug to UART1
+    os_install_putc1(uart1_write_char);
 }
 
 void ICACHE_FLASH_ATTR
