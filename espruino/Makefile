@@ -421,7 +421,32 @@ else ifdef ESP8266_ESP12
 EMBEDDED=1
 BOARD=ESP8266_ESP12
 OPTIMIZEFLAGS+=-Os
-CFLAGS+=-std=gnu99 -fno-builtin -Wno-maybe-uninitialized -Wno-old-style-declaration -Wno-conversion -Wno-unused-variable -Wno-unused-parameter -Wno-ignored-qualifiers -Wno-discarded-qualifiers -Wno-float-conversion -fno-strict-aliasing -Wno-type-limits -Wno-unused-function -Wpointer-arith -Wundef -Werror -Wl,EL -fno-inline-functions -nostdlib -mlongcalls -mtext-section-literals -D__ETS__ -DICACHE_FLASH
+CFLAGS+=-std=gnu99 \
+-fno-builtin \
+-Wno-maybe-uninitialized \
+-Wno-old-style-declaration \
+-Wno-conversion \
+-Wno-unused-variable \
+-Wno-unused-parameter \
+-Wno-ignored-qualifiers \
+-Wno-discarded-qualifiers \
+-Wno-float-conversion \
+-Wno-parentheses \
+-fno-strict-aliasing \
+-Wno-type-limits \
+-Wno-unused-function \
+-Wno-unused-value \
+-Wno-implicit-function-declaration \
+-Wpointer-arith \
+-Wundef \
+-Werror \
+-Wl,EL \
+-fno-inline-functions \
+-nostdlib \
+-mlongcalls \
+-mtext-section-literals \
+-D__ETS__ \
+-DICACHE_FLASH
 else
 ifeq ($(shell uname -m),armv6l)
 RASPBERRYPI=1 # just a guess
@@ -1218,7 +1243,14 @@ LDFLAGS += --specs=nano.specs -lc -lnosys
 endif # NRF52
 
 ifdef ESP8266_ESP12
+#
+# The Root of the ESP8266_SDK distributed by Espressif
+#
+ESP8266_SDK_ROOT=C:/Users/IBM_ADMIN/Documents/RaspberryPi/ESP8266/libs/esp_iot_sdk_v1.3.0_15_08_08/esp_iot_sdk_v1.3.0
 CCPREFIX=xtensa-lx106-elf-
+LDFLAGS += -LC:/Espressif/ESP8266_SDK/lib -T$(ESP8266_SDK_ROOT)/ld/eagle.app.v6.ld -nostdlib -Wl,--no-check-sections -u call_user_start -Wl,-static -Wl,--start-group -lc -lgcc -lhal -lphy -lpp -lnet80211 -llwip -lwpa -lmain -Wl,--end-group
+SOURCES += $(ROOT)/targets/esp8266/uart.c $(ROOT)/targets/esp8266/user_main.c
+INCLUDE += -I$(ESP8266_SDK_ROOT)/include -I$(ROOT)/targets/esp8266
 endif # ESP8266_ESP12
 
 export CC=$(CCPREFIX)gcc
