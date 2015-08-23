@@ -36,7 +36,7 @@ static void gotIpCallback() {
  * we can assume that the ESP8266 is fully ready to do work for us.
  */
 static void initDone() {
-	os_printf("initDone");
+	os_printf("initDone\n");
 	jsiConsolePrintf("\nAbout to setup WiFi\n");
 	ESP8266_setupWiFi("sweetie", "kolban12", gotIpCallback);
 } // End of initDone
@@ -62,11 +62,5 @@ void user_init() {
 	system_init_done_cb(initDone);
 	// Do NOT attempt to auto connect to an access point.
 	wifi_station_set_auto_connect(0);
-
-
-	char a[10];
-	strncat(a, "hello", 5);
-	int i = strlen(a);
-	strcpy(a, "xxx");
 }
 // End of file

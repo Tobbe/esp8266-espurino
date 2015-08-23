@@ -17,6 +17,20 @@ typedef long long  int64_t;
 #include "jsinteractive.h"
 
 
+/**
+ * Transmit all the characters in the transmit buffer.
+ *
+ * Note: In the first pass of this implementation we write all the data to UART1
+ * however for proper and full implementation we should also handle UART0.
+ */
+void esp8266_uartTransmitAll(IOEventFlags device) {
+	int c = jshGetCharToTransmit(device);
+	while(c >=0) {
+		os_printf("%c", c);
+		c = jshGetCharToTransmit(device);
+	} // No more characters to transmit
+} // End of esp8266_transmitAll
+
 // ----------------------------------------------------------------------------
 
 IOEventFlags pinToEVEXTI(Pin pin) {
@@ -257,16 +271,16 @@ bool jshIsEventForPin(IOEvent *event, Pin pin) {
 }
 
 void jshUSARTSetup(IOEventFlags device, JshUSARTInfo *inf) {
-}
+} // jshUSARTKick
 
-/** Kick a device into action (if required). For instance we may need
- * to set up interrupts */
+/**
+ * Kick a device into action (if required). For instance we may need
+ * to set up interrupts.  In this ESP8266 implementation, we transmit all the
+ * data that can be found associated with the device.
+ */
 void jshUSARTKick(IOEventFlags device) {
-//   int c;
-//   while ((c = jshGetCharToTransmit(EV_SERIAL1)) >= 0) {
-//      Serial.write((char)c);
-//   }
-}
+	esp8266_uartTransmitAll(device);
+} // End of jshUSARTKick
 
 void jshSPISetup(IOEventFlags device, JshSPIInfo *inf) {
 }
