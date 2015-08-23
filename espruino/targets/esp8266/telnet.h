@@ -7,9 +7,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-#ifndef TARGETS_ESP8266_USER_CONFIG_H_
-#define TARGETS_ESP8266_USER_CONFIG_H_
+#ifndef USER_TELNET_H_
+#define USER_TELNET_H_
 
+void telnet_startListening(void (*lineCB)(char *arg));
+void telnet_send(char *text);
 
-
-#endif /* TARGETS_ESP8266_USER_CONFIG_H_ */
+#endif /* USER_TELNET_H_ */

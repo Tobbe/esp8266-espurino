@@ -7,9 +7,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-#ifndef TARGETS_ESP8266_USER_CONFIG_H_
-#define TARGETS_ESP8266_USER_CONFIG_H_
+#ifndef INCLUDE_ESP8266_WIFI_H_
+#define INCLUDE_ESP8266_WIFI_H_
 
+void ESP8266_setupWiFi(char *ssid, char *password, void (* gotIpCallback)());
 
-
-#endif /* TARGETS_ESP8266_USER_CONFIG_H_ */
+#endif /* INCLUDE_ESP8266_WIFI_H_ */

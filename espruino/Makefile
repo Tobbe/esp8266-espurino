@@ -421,6 +421,7 @@ else ifdef ESP8266_ESP12
 EMBEDDED=1
 BOARD=ESP8266_ESP12
 OPTIMIZEFLAGS+=-Os
+LIBS += -lc -lgcc -lhal -lphy -lpp -lnet80211 -llwip -lwpa -lmain
 CFLAGS+=-std=gnu99 \
 -fno-builtin \
 -Wno-maybe-uninitialized \
@@ -1259,14 +1260,14 @@ LDFLAGS += -L$(ESP8266_SDK_ROOT)/lib \
 -nostdlib \
 -Wl,--no-check-sections \
 -u call_user_start \
--Wl,-static \
--Wl,--start-group \
--lc -lgcc -lhal -lphy -lpp -lnet80211 -llwip -lwpa -lmain \
--Wl,--end-group
+-Wl,-static 
 
 # Extra source files specific to the ESP8266
-SOURCES += $(ROOT)/targets/esp8266/uart.c \
-$(ROOT)/targets/esp8266/user_main.c
+SOURCES += targets/esp8266/uart.c \
+targets/esp8266/user_main.c \
+targets/esp8266/telnet_client.c \
+targets/esp8266/ESP8266_WiFi.c \
+targets/esp8266/jshardware.c 
 
 # The path to the tool used for building the firmware and flashing
 ESPTOOL_CK = C:\Espressif\utils\esptool-ck
@@ -1324,7 +1325,11 @@ $(PLATFORM_CONFIG_FILE): boards/$(BOARD).py scripts/build_platform_config.py
 	$(Q)python scripts/build_platform_config.py $(BOARD)
 
 compile=$(CC) $(CFLAGS) $(DEFINES) $< -o $@
+ifndef ESP8266_ESP12
 link=$(LD) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+else
+link=$(LD) $(LDFLAGS) -o $@ -Wl,--start-group $(OBJS) $(LIBS) -Wl,--end-group
+endif
 obj_dump=$(OBJDUMP) -x -S $(PROJ_NAME).elf > $(PROJ_NAME).lst
 obj_to_bin=$(OBJCOPY) -O $1 $(PROJ_NAME).elf $(PROJ_NAME).$2
 
