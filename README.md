@@ -10,6 +10,8 @@ When this project is completed, the work performed here will be merged into the 
 new distribution of anything ESP8266 specific.   Instead, all that will be needed will be a download of Espurino itself to
 allow ESP8266 users to take advantage of it.
 
+There is an active Wiki associated with this project.  It can be found on [Wiki](https://github.com/esp8266-espruino/esp8266-espurino/wiki) page on the Github project.
+
 The primary administrators of this project are:
 
 * Blaž Jugovic
