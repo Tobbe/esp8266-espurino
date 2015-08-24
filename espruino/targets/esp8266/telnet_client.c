@@ -24,20 +24,28 @@ static bool discard;
 static void (*lineCB)(char *);
 static struct espconn *pTelnetClientConn;
 
+/**
+ * Callback invoked when a new TCP/IP connection has been formed.
+ * o arg - This is a pointer to the struct espconn that reflects this entry.
+ */
 static void connectCB(void *arg) {
 	struct espconn *pConn = (struct espconn *)arg;
+
 	// By default, an ESP TCP connection times out after 10 seconds
 	// Change to the max value.
 	espconn_regist_time(pConn, 7200, 1);
+
 	os_printf("Connect cb!!\n");
 	strcpy(line, "");
 	discard = false;
 	pTelnetClientConn = pConn;
-}
+} // End of connectCB
 
 static void disconnectCB(void *arg) {
 	os_printf("Disconnect cb!!\n");
-}
+} // End of disconnectCB
+
+
 static void receiveCB(void *arg, char *pData, unsigned short len) {
 	//os_printf("Receive cb!!  len=%d\n", len);
 	if (strlen(line) + len >= MAXLINE) {
@@ -57,11 +65,12 @@ static void receiveCB(void *arg, char *pData, unsigned short len) {
 	} else {
 		//os_printf("Not found, current='%s'\n", line);
 	}
-}
+} // End of receiveCB
 
 /**
- * Register a listener on port 23 to handle incoming telnet client
- * connections.
+ * Register a telnet serever listener on port 23 to handle incoming telnet client
+ * connections.  The parameter called pLineCB is a pointer to a callback function
+ * that should be called when we have received a link of input.
  */
 void telnet_startListening(void (*plineCB)(char *)) {
 	lineCB= plineCB;
@@ -74,9 +83,12 @@ void telnet_startListening(void (*plineCB)(char *)) {
 	espconn_regist_recvcb(&conn1, receiveCB);
 	espconn_accept(&conn1);
 	os_printf("Now listening for telnet client connection ...\n");
-}
+} // End of telnet_startListening
 
+/**
+ * Send the string passed as a parameter to the telnet client.
+ */
 void telnet_send(char *text) {
 	espconn_sent(pTelnetClientConn, (uint8_t *)text, strlen(text));
-}
+} // End of telnet_send
 // End of file
