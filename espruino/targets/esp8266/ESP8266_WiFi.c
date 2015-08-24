@@ -62,6 +62,7 @@ void ESP8266_setupWiFi(char *ssid, char *password, void (* gotIpCallback)()) {
 	strncpy((char *)stationConfig.ssid, ssid, 32);
 	strncpy((char *)stationConfig.password, password, 64);
 	wifi_station_set_config_current(&stationConfig);
+	os_printf("station connect called\n");
 	wifi_station_connect();
 } // End of ESP8266_setupWiFi
 // End of file

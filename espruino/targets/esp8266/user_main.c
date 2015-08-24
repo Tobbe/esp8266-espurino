@@ -7,9 +7,36 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+#include <user_interface.h>
 #include <osapi.h>
 #include <driver/uart.h>
 #include <telnet.h>
+
+//#define FAKE_STDLIB
+#define _GCC_WRAP_STDINT_H
+typedef long long  int64_t;
+
+#include <jsdevices.h>
+
+// --- Constants
+#define TASK_QUEUE_LENGTH 10
+#define APP_PRIO USER_TASK_PRIO_1
+
+// --- Forward definitions
+static void mainLoop();
+
+// --- File local variables
+static uint32 lastTime;
+static os_event_t taskQueue[TASK_QUEUE_LENGTH];
+
+// --- Functions
+
+/**
+ * The event handler for ESP8266 tasks as created by system_os_post().
+ */
+static void eventHandler(os_event_t *pEvent) {
+	mainLoop();
+} // End of eventHandler
 
 /**
  * A callback function to be invoked when a line has been entered on the telnet client.
@@ -17,6 +44,9 @@
  */
 static void telnetLineCB(char *line) {
 	jsiConsolePrintf("LineCB: %s", line);
+	// Pass the line to the interactive module ...
+
+	jshPushIOCharEvents(jsiGetConsoleDevice(), line, strlen(line));
 	//jspEvaluate(line, true);
 	//jsiDumpState();
 	telnet_send("JS> ");
@@ -30,15 +60,33 @@ static void gotIpCallback() {
 	telnet_startListening(telnetLineCB);
 } // End of gotIpCallback
 
+static void mainLoop() {
+	jsiLoop();
+	if (system_get_time() - lastTime > 1000 * 1000 * 5) {
+		lastTime = system_get_time();
+		os_printf("tick: %d\n", jshGetSystemTime());
+	}
+
+	// Setup for another callback
+	system_os_post(APP_PRIO, (os_signal_t)1, 0);
+} // End of mainLoop
+
 /**
  * The ESP8266 provides a mechanism to register a callback that is invoked when initialization
  * of the ESP8266 is complete.  This is the implementation of that callback.  At this point
  * we can assume that the ESP8266 is fully ready to do work for us.
  */
 static void initDone() {
-	os_printf("initDone\n");
+	os_printf("initDone invoked\n");
+	jshInit(); // Initialize the hardware
+	jsvInit(); // Initialize the variables
+	jsiInit(); // Initialize the interactive subsystem
 	jsiConsolePrintf("\nAbout to setup WiFi\n");
 	ESP8266_setupWiFi("sweetie", "kolban12", gotIpCallback);
+
+	system_os_task(eventHandler, APP_PRIO, taskQueue, TASK_QUEUE_LENGTH);
+	uint32 lastTime = system_get_time();
+	system_os_post(APP_PRIO, (os_signal_t)1, 0);
 } // End of initDone
 
 /**

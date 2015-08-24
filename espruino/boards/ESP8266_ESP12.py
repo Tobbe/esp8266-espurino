@@ -23,7 +23,7 @@ info = {
 };
 chip = {
   'part' : "ESP8266",
-  'family' : "AVR",
+  'family' : "ESP8266",
   'package' : "",
   'ram' : 80,
   'flash' : 512,
