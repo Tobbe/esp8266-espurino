@@ -122,8 +122,12 @@ JsVar *jsnCallFunction(void *function, JsnArgumentType argumentSpecifier, JsVar 
       } else {
         if (JSWAT_IS_64BIT(returnType))
           result = ((uint64_t (*)(size_t,size_t,size_t,size_t,JsVarFloat,JsVarFloat,JsVarFloat,JsVarFloat))function)(argData[0],argData[1],argData[2],argData[3],doubleData[0],doubleData[1],doubleData[2],doubleData[3]);
-        else
-          result = ((uint32_t (*)(size_t,size_t,size_t,size_t,JsVarFloat,JsVarFloat,JsVarFloat,JsVarFloat))function)(argData[0],argData[1],argData[2],argData[3],doubleData[0],doubleData[1],doubleData[2],doubleData[3]);
+        else {
+			if (argCount<=2) // Xtensia fix
+				result = ((uint32_t (*)(size_t,size_t,JsVarFloat,JsVarFloat))function)(argData[0],argData[1],doubleData[0],doubleData[1]);
+			else
+				result = ((uint32_t (*)(size_t,size_t,size_t,size_t,JsVarFloat,JsVarFloat,JsVarFloat,JsVarFloat))function)(argData[0],argData[1],argData[2],argData[3],doubleData[0],doubleData[1],doubleData[2],doubleData[3]);
+        }
       }
     } else if (returnType==JSWAT_JSVARFLOAT) {
       // On x86, doubles are returned in a floating point unit register
