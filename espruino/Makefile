@@ -1277,6 +1277,8 @@ ESPTOOL = C:\Espressif\utils\esptool
 INCLUDE += -I$(ESP8266_SDK_ROOT)/include \
 -I$(ROOT)/targets/esp8266
 
+# Specify that this is an Xtensa processor
+DEFINES += -DXTENSA
 # End of ESP8266 definitions
 endif # ESP8266_ESP12
 
