@@ -1412,7 +1412,7 @@ else ifdef ESP8266_ESP12
 # Handle ESP8266 flashing
 	$(Q)$(ESPTOOL_CK) -eo $(PROJ_NAME).elf -bo ESP8266_0x00000.bin -bs .text -bs .data -bs .rodata -bs .iram0.text -bc -ec
 	$(Q)$(ESPTOOL_CK) -eo $(PROJ_NAME).elf -es .irom0.text ESP8266_0x10000.bin -ec
-	$(Q)$(ESPTOOL) --port COM11 write_flash --flash_freq 40m --flash_mode qio --flash_size 4m 0x00000 ESP8266_0x00000.bin 0x10000 ESP8266_0x10000.bin
+	$(Q)$(ESPTOOL) --port COM11 --baud 115200 write_flash  --flash_freq 40m --flash_mode qio --flash_size 4m 0x00000 ESP8266_0x00000.bin 0x10000 ESP8266_0x10000.bin
 # End of handle ESP8266 flashing
 else
 	echo ST-LINK flash
