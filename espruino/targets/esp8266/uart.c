@@ -308,7 +308,8 @@ uart_recvTask(os_event_t *events)
         uint8 idx=0;
         for(idx=0;idx<fifo_len;idx++) {
             d_tmp = READ_PERI_REG(UART_FIFO(UART0)) & 0xFF;
-            uart_tx_one_char(UART0, d_tmp);
+            // Uncomment the following line to local echo
+            //uart_tx_one_char(UART0, d_tmp);
             if (rxBufferLen < MAX_RX_BUFFER) {
             	rxBuffer[rxBufferLen] = d_tmp;
             	rxBufferLen++;

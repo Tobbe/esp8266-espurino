@@ -14,56 +14,53 @@
 
 //#define FAKE_STDLIB
 #define _GCC_WRAP_STDINT_H
-typedef long long  int64_t;
+typedef long long int64_t;
 
 #include <jsdevices.h>
+#include "ESP8266_board.h"
 
 // --- Constants
 #define WIFI_SSID "kolbanwifi"
 #define WIFI_PASSWORD "zdpu867$"
-#define TASK_QUEUE_LENGTH 10
-#define UART_PRIO USER_TASK_PRIO_0
-#define APP_PRIO USER_TASK_PRIO_1
-#define CONNECT_WIFI 0
-#define MAX_UARTBUFFER 1024
 
-#define TASK_MAINLOOP 1
-#define TASK_RX_DATA 2
+#define CONNECT_WIFI 0
+
+#define TASK_QUEUE_LENGTH 10
 
 // --- Forward definitions
 static void mainLoop();
-int getRXBuffer(char *pBuffer, int bufferLen);
 
 // --- File local variables
 static uint32 lastTime;
 // The task queue for the app
-static os_event_t taskQueueApp[TASK_QUEUE_LENGTH];
-static os_event_t taskQueueUart[TASK_QUEUE_LENGTH];
-static uint8_t uartbuffer[MAX_UARTBUFFER];
+static os_event_t taskAppQueue[TASK_QUEUE_LENGTH];
 
 // --- Functions
 
-
 /**
- * The event handler for ESP8266 tasks as created by system_os_post().
+ * The event handler for ESP8266 tasks as created by system_os_post() on the TASK_APP_QUEUE.
  */
 static void eventHandler(os_event_t *pEvent) {
 	char pBuffer[100];
-	switch(pEvent->sig) {
-	case TASK_MAINLOOP:
+	switch (pEvent->sig) {
+	// Handle the main loop event.
+	case TASK_APP_MAINLOOP:
 		mainLoop();
 		break;
-	case TASK_RX_DATA:
-		os_printf("We need to get some data!");
+	// Handle the event to process received data.
+	case TASK_APP_RX_DATA: {
+		// Get the data from the UART RX buffer.  If the size of the returned data is
+		// not zero, then push it onto the Espruino processing queue for characters.
 		int size = getRXBuffer(pBuffer, sizeof(pBuffer));
-		os_printf(" - Got: %d\n", size);
-		int i=0;
-		for (i=0; i<size; i++) {
-			os_printf("%c", pBuffer[i]);
+		if (size > 0) {
+			jshPushIOCharEvents(jsiGetConsoleDevice(), pBuffer, size);
 		}
+	}
 		break;
+	// Handle the unknown event type.
 	default:
-		os_printf("user_main: eventHandler: Unknown task type: %d", pEvent->sig);
+		os_printf("user_main: eventHandler: Unknown task type: %d",
+				pEvent->sig);
 		break;
 	}
 } // End of eventHandler
@@ -98,7 +95,7 @@ static void mainLoop() {
 	}
 
 	// Setup for another callback
-	system_os_post(APP_PRIO, (os_signal_t)TASK_MAINLOOP, 0);
+	system_os_post(TASK_APP_QUEUE, TASK_APP_MAINLOOP, 0);
 } // End of mainLoop
 
 /**
@@ -108,10 +105,12 @@ static void mainLoop() {
  */
 static void initDone() {
 	os_printf("initDone invoked\n");
+
+	uint32 lastTime = system_get_time();
+
 	jshInit(); // Initialize the hardware
 	jsvInit(); // Initialize the variables
 	jsiInit(); // Initialize the interactive subsystem
-
 
 	// Connect to WIFI only if asked
 	if (CONNECT_WIFI) {
@@ -119,18 +118,13 @@ static void initDone() {
 		ESP8266_setupWiFi(WIFI_SSID, WIFI_PASSWORD, gotIpCallback);
 	}
 
-
-	// Register the event handlers
-	system_os_task(eventHandler, APP_PRIO, taskQueueApp, TASK_QUEUE_LENGTH);
-	os_printf("Setup listener on prio %d\n", UART_PRIO);
-
-	//system_os_task(uartRecvTask, 0, taskQueueUart, TASK_QUEUE_LENGTH);
-	//uart_rx_intr_enable(0);
-
-	uint32 lastTime = system_get_time();
+	// Register the event handlers.
+	system_os_task(eventHandler, TASK_APP_QUEUE, taskAppQueue,
+	TASK_QUEUE_LENGTH);
 
 	// Post the first event to get us going.
-	system_os_post(APP_PRIO, (os_signal_t)TASK_MAINLOOP, 0);
+	system_os_post(TASK_APP_QUEUE, TASK_APP_MAINLOOP, 0);
+
 	return;
 } // End of initDone
 

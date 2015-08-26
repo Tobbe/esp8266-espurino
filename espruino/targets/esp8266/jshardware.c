@@ -5,6 +5,7 @@
 #include <espconn.h>
 #include <gpio.h>
 #include <mem.h>
+#include <driver/uart.h>
 
 //#define FAKE_STDLIB
 #define _GCC_WRAP_STDINT_H
@@ -24,7 +25,8 @@ typedef long long int64_t;
 void esp8266_uartTransmitAll(IOEventFlags device) {
 	int c = jshGetCharToTransmit(device);
 	while (c >= 0) {
-		os_printf("%c", c);
+		//os_printf("%c", c);
+		uart_tx_one_char(0, c);
 		c = jshGetCharToTransmit(device);
 	} // No more characters to transmit
 } // End of esp8266_transmitAll

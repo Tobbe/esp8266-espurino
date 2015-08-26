@@ -21,6 +21,10 @@
 #include "eagle_soc.h"
 #include "c_types.h"
 
+
+int getRXBuffer(char *pBuffer, int bufferLen);
+
+
 #define UART_TX_BUFFER_SIZE 256  //Ring buffer length of tx buffer
 #define UART_RX_BUFFER_SIZE 256 //Ring buffer length of rx buffer
 
