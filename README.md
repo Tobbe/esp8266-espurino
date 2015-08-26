@@ -12,6 +12,8 @@ allow ESP8266 users to take advantage of it.
 
 There is an active Wiki associated with this project.  It can be found on [Wiki](https://github.com/esp8266-espruino/esp8266-espurino/wiki) page on the Github project.
 
+This specific project (esp8266-espruino/esp8266-espurino) is the "best so far" copy of the code base that is being actively edited.   The sister project called (esp8266-espruino/Espruino) is the forked copy of the master Esruino project.  Only items ready for submission to the master should be editted and placed in there.
+
 The primary administrators of this project are:
 
 * Blaž Jugovic
