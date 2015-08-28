@@ -10,5 +10,6 @@
 #include "jsvar.h"
 
 void jswrap_ESP8266WiFi_connect(JsVar *jsv_ssid, JsVar *jsv_password);
+void jswrap_ESP8266WiFi_getAccessPoints(JsVar *callback);
 
 #endif /* LIBS_NETWORK_ESP8266WIFI_JSWRAP_ESP8266WIFI_H_ */

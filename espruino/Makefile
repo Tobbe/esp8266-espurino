@@ -1267,8 +1267,7 @@ SOURCES += targets/esp8266/uart.c \
 targets/esp8266/user_main.c \
 targets/esp8266/telnet_client.c \
 targets/esp8266/ESP8266_WiFi.c \
-targets/esp8266/jshardware.c \
-libs/network/ESP8266WiFi/esp8266wifi.c
+targets/esp8266/jshardware.c
 
 # The path to the tool used for building the firmware and flashing
 ESPTOOL_CK = C:\Espressif\utils\esptool-ck
