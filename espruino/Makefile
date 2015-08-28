@@ -1267,7 +1267,8 @@ SOURCES += targets/esp8266/uart.c \
 targets/esp8266/user_main.c \
 targets/esp8266/telnet_client.c \
 targets/esp8266/ESP8266_WiFi.c \
-targets/esp8266/jshardware.c 
+targets/esp8266/jshardware.c \
+libs/network/ESP8266WiFi/esp8266wifi.c
 
 # The path to the tool used for building the firmware and flashing
 ESPTOOL_CK = C:\Espressif\utils\esptool-ck
@@ -1275,7 +1276,10 @@ ESPTOOL = C:\Espressif\utils\esptool
 
 # Extra include directories specific to the ESP8266
 INCLUDE += -I$(ESP8266_SDK_ROOT)/include \
--I$(ROOT)/targets/esp8266
+-I$(ROOT)/targets/esp8266 \
+-I$(ROOT)/libs/network/ESP8266WiFi
+
+WRAPPERSOURCES += libs/network/ESP8266WiFi/jswrap_ESP8266WiFi.c
 
 # Specify that this is an Xtensa processor
 DEFINES += -DXTENSA
