@@ -112,12 +112,6 @@ static void initDone() {
 	jsvInit(); // Initialize the variables
 	jsiInit(); // Initialize the interactive subsystem
 
-	// Connect to WIFI only if asked
-	if (CONNECT_WIFI) {
-		jsiConsolePrintf("\nAbout to setup WiFi\n");
-		ESP8266_setupWiFi(WIFI_SSID, WIFI_PASSWORD, gotIpCallback);
-	}
-
 	// Register the event handlers.
 	system_os_task(eventHandler, TASK_APP_QUEUE, taskAppQueue,
 	TASK_QUEUE_LENGTH);
