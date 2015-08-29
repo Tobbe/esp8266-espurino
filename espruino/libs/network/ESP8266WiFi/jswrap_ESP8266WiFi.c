@@ -10,6 +10,7 @@ typedef long long int64_t;
 
 #include "jswrap_ESP8266WiFi.h"
 #include "jsinteractive.h" // Pull inn the jsiConsolePrint function
+#include "network.h"
 
 // Forward declaration of functions.
 static void scanCB(void *arg, STATUS status);
@@ -196,6 +197,15 @@ JsVar *jswrap_ESP8266WiFi_getIPInfo() {
 	jsvObjectSetChild(ipInfo, "gw", jsvNewFromString(ipString));
 	return ipInfo;
 } // End of jswrap_ESP8266WiFi_getIPInfo
+
+
+static void setupJsNetwork() {
+	JsNetwork net;
+	networkCreate(&net, JSNETWORKTYPE_ESP8266_BOARD);
+	networkSet(&net);
+}
+
+
 
 /**
  * Callback function that is invoked at the culmination of a scan.

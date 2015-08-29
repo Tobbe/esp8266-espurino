@@ -19,7 +19,7 @@ info = {
  'name' : "ESP8266 ESP-12",
  'default_console' : "EV_SERIAL1",
  'variables' : 1023,
- 'binary_name' : 'espruino_%v_esp8266_esp12',
+ 'binary_name' : 'espruino_%v_esp8266_board',
 };
 chip = {
   'part' : "ESP8266",

@@ -46,7 +46,7 @@ V=1
 # MINISTM32_STRIVE=1
 # MINISTM32_ANGLED_VE=1
 # MINISTM32_ANGLED_VG=1
-# ESP8266_ESP12=1                  # ESP8266 from Espressif
+# ESP8266_BOARD=1                  # ESP8266 from Espressif
 # Or nothing for standard linux compile
 #
 # Also:
@@ -417,9 +417,10 @@ BOARD=LCTECH_STM32F103RBT6
 STLIB=STM32F10X_MD
 PRECOMPILED_OBJS+=$(ROOT)/targetlibs/stm32f1/lib/startup_stm32f10x_md.o
 OPTIMIZEFLAGS+=-Os
-else ifdef ESP8266_ESP12
+else ifdef ESP8266_BOARD
+USE_NET=1
 EMBEDDED=1
-BOARD=ESP8266_ESP12
+BOARD=ESP8266_BOARD
 OPTIMIZEFLAGS+=-Os
 LIBS += -lc -lgcc -lhal -lphy -lpp -lnet80211 -llwip -lwpa -lmain
 CFLAGS+=-std=gnu99 \
@@ -545,7 +546,7 @@ endif
 
 
 
-# If we're not on Linux and we want internet, we need either CC3000 or WIZnet support
+# If we're not on Linux and we want internet, we need CC3000, WIZnet, ESP8266 or ESP8266_BOARD support
 ifdef USE_NET
 ifndef LINUX
 ifdef WIZNET
@@ -554,7 +555,11 @@ else
 ifdef ESP8266
 USE_ESP8266=1
 else
+ifdef ESP8266_BOARD
+USE_ESP8266_BOARD=1
+else
 USE_CC3000=1
+endif
 endif
 endif
 endif
@@ -760,7 +765,7 @@ endif
 
 ifdef USE_NET
 DEFINES += -DUSE_NET
-INCLUDE += -I$(ROOT)/libs/network -I$(ROOT)/libs/network -I$(ROOT)/libs/network/http
+INCLUDE += -I$(ROOT)/libs/network -I$(ROOT)/libs/network/http
 WRAPPERSOURCES += \
 libs/network/jswrap_net.c \
 libs/network/http/jswrap_http.c
@@ -1246,8 +1251,7 @@ endif # NRF52
 #
 # Definitions for the build of the ESP8266
 #
-ifdef ESP8266_ESP12
-
+ifdef ESP8266_BOARD
 # The Root of the ESP8266_SDK distributed by Espressif
 ESP8266_SDK_ROOT=C:/Users/IBM_ADMIN/Documents/RaspberryPi/ESP8266/libs/esp_iot_sdk_v1.3.0_15_08_08/esp_iot_sdk_v1.3.0
 
@@ -1262,10 +1266,11 @@ LDFLAGS += -L$(ESP8266_SDK_ROOT)/lib \
 -u call_user_start \
 -Wl,-static 
 
-# Extra source files specific to the ESP8266
+# Extra source files specific to the ESP8266 board
 SOURCES += targets/esp8266/uart.c \
 targets/esp8266/user_main.c \
-targets/esp8266/jshardware.c
+targets/esp8266/jshardware.c \
+libs/network/ESP8266WiFi/network_esp8266_board.c
 
 # The path to the tool used for building the firmware and flashing
 ESPTOOL_CK = C:\Espressif\utils\esptool-ck
@@ -1274,14 +1279,15 @@ ESPTOOL = C:\Espressif\utils\esptool
 # Extra include directories specific to the ESP8266
 INCLUDE += -I$(ESP8266_SDK_ROOT)/include \
 -I$(ROOT)/targets/esp8266 \
--I$(ROOT)/libs/network/ESP8266WiFi
+-I$(ROOT)/libs/network/ESP8266WiFi 
 
 WRAPPERSOURCES += libs/network/ESP8266WiFi/jswrap_ESP8266WiFi.c
 
-# Specify that this is an Xtensa processor
-DEFINES += -DXTENSA
+# Specify the defines
+DEFINES += -DXTENSA -DUSE_ESP8266_BOARD
+
 # End of ESP8266 definitions
-endif # ESP8266_ESP12
+endif # ESP8266_BOARD
 
 export CC=$(CCPREFIX)gcc
 export LD=$(CCPREFIX)gcc
@@ -1328,7 +1334,7 @@ $(PLATFORM_CONFIG_FILE): boards/$(BOARD).py scripts/build_platform_config.py
 	$(Q)python scripts/build_platform_config.py $(BOARD)
 
 compile=$(CC) $(CFLAGS) $(DEFINES) $< -o $@
-ifndef ESP8266_ESP12
+ifndef ESP8266_BOARD
 link=$(LD) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 else
 link=$(LD) $(LDFLAGS) -o $@ -Wl,--start-group $(OBJS) $(LIBS) -Wl,--end-group
@@ -1344,7 +1350,7 @@ quiet_obj_to_bin= GEN $(PROJ_NAME).$2
 %.o: %.c $(PLATFORM_CONFIG_FILE) $(PININFOFILE).h
 	@echo $($(quiet_)compile)
 	@$(call compile)
-ifdef ESP8266_ESP12
+ifdef ESP8266_BOARD
 	$(OBJCOPY) --rename-section .text=.irom0.text --rename-section .literal=.irom0.literal $@
 endif
 
@@ -1388,7 +1394,7 @@ ifndef TRAVIS
 	bash scripts/check_size.sh $(PROJ_NAME).bin
 endif
 
-ifndef ESP8266_ESP12
+ifndef ESP8266_BOARD
 proj: $(PROJ_NAME).lst $(PROJ_NAME).bin $(PROJ_NAME).hex
 else
 proj: $(PROJ_NAME).elf
@@ -1411,7 +1417,7 @@ else ifdef OLIMEXINO_STM32_BOOTLOADER
 else ifdef NUCLEO
 	if [ -d "/media/$(USER)/NUCLEO" ]; then cp $(PROJ_NAME).bin /media/$(USER)/NUCLEO;sync; fi
 	if [ -d "/media/NUCLEO" ]; then cp $(PROJ_NAME).bin /media/NUCLEO;sync; fi
-else ifdef ESP8266_ESP12
+else ifdef ESP8266_BOARD
 # Handle ESP8266 flashing
 	$(Q)$(ESPTOOL_CK) -eo $(PROJ_NAME).elf -bo ESP8266_0x00000.bin -bs .text -bs .data -bs .rodata -bs .iram0.text -bc -ec
 	$(Q)$(ESPTOOL_CK) -eo $(PROJ_NAME).elf -es .irom0.text ESP8266_0x10000.bin -ec
