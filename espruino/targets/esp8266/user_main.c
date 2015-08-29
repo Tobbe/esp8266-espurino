@@ -12,6 +12,8 @@
 #include <driver/uart.h>
 #include <telnet.h>
 
+
+
 //#define FAKE_STDLIB
 #define _GCC_WRAP_STDINT_H
 typedef long long int64_t;
@@ -26,6 +28,9 @@ typedef long long int64_t;
 #define CONNECT_WIFI 0
 
 #define TASK_QUEUE_LENGTH 10
+
+// Should we introduce a ticker to say we are still alive?
+//#define EPS8266_BOARD_HEARTBEAT
 
 // --- Forward definitions
 static void mainLoop();
@@ -89,10 +94,13 @@ static void gotIpCallback() {
 
 static void mainLoop() {
 	jsiLoop();
+
+#ifdef EPS8266_BOARD_HEARTBEAT
 	if (system_get_time() - lastTime > 1000 * 1000 * 5) {
 		lastTime = system_get_time();
 		os_printf("tick: %d\n", jshGetSystemTime());
 	}
+#endif
 
 	// Setup for another callback
 	system_os_post(TASK_APP_QUEUE, TASK_APP_MAINLOOP, 0);
@@ -105,6 +113,9 @@ static void mainLoop() {
  */
 static void initDone() {
 	os_printf("initDone invoked\n");
+
+	// Discard any junk data in the input as this is a boot.
+	//uart_rx_discard();
 
 	uint32 lastTime = system_get_time();
 
@@ -143,6 +154,6 @@ void user_init() {
 	// Register the ESP8266 initialization callback.
 	system_init_done_cb(initDone);
 	// Do NOT attempt to auto connect to an access point.
-	wifi_station_set_auto_connect(0);
+	//wifi_station_set_auto_connect(0);
 }
 // End of file

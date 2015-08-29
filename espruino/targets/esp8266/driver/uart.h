@@ -23,6 +23,7 @@
 
 
 int getRXBuffer(char *pBuffer, int bufferLen);
+int uart_rx_discard();
 
 
 #define UART_TX_BUFFER_SIZE 256  //Ring buffer length of tx buffer

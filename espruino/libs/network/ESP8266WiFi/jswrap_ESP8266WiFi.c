@@ -16,6 +16,7 @@ typedef long long int64_t;
 static void scanCB(void *arg, STATUS status);
 static void wifiEventHandler(System_Event_t *event);
 static void ipAddrToString(struct ip_addr addr, char *string);
+static char *nullTerminateString(char *target, char *source, int sourceLength);
 
 static JsVar *jsScanCallback;
 static JsVar *jsWiFiEventCallback;
@@ -26,22 +27,27 @@ static void init() {
 
 // Let's define the JavaScript class that will contain our `world()` method. We'll call it `Hello`
 /*JSON{
-  "type" : "class",
+  "type"  : "class",
   "class" : "ESP8266WiFi"
 }*/
 
+
+/**
+ * Connect the station to an access point.
+ * o ssid - The network id of the access point.
+ * o password - The password to use to connect to the access point.
+ */
 /*JSON{
-  "type" : "staticmethod",
-  "class" : "ESP8266WiFi",
-  "name" : "connect",
+  "type"     : "staticmethod",
+  "class"    : "ESP8266WiFi",
+  "name"     : "connect",
   "generate" : "jswrap_ESP8266WiFi_connect",
-  "params" : [
+  "params"   : [
     ["ssid","JsVar","The network SSID"],
-    ["password","JsVar","The password to the access point"],
-    ["callback","JsVar","WiFi event callback"]
+    ["password","JsVar","The password to the access point"]
   ]
 }*/
-void jswrap_ESP8266WiFi_connect(JsVar *jsv_ssid, JsVar *jsv_password, JsVar *callback) {
+void jswrap_ESP8266WiFi_connect(JsVar *jsv_ssid, JsVar *jsv_password) {
 
 	if (jsv_ssid == NULL || !jsvIsString(jsv_ssid)) {
 	    jsExceptionHere(JSET_ERROR, "No SSID.");
@@ -51,19 +57,6 @@ void jswrap_ESP8266WiFi_connect(JsVar *jsv_ssid, JsVar *jsv_password, JsVar *cal
 	    jsExceptionHere(JSET_ERROR, "No password.");
 		return;
 	}
-	if (callback == NULL || !jsvIsFunction(callback)) {
-	    jsExceptionHere(JSET_ERROR, "No callback.");
-		return;
-	}
-
-	// We are about to save a new global WiFi even callback handler.  If we have previously
-	// had one, we need to unlock it so that we don't leak memory.
-	if (jsWiFiEventCallback != NULL) {
-		jsvUnLock(jsWiFiEventCallback);
-	}
-
-	// Save the global WiFi event callback handler.
-	jsWiFiEventCallback = jsvLockAgainSafe(callback);
 
 	// Create strings from the JsVars for the ESP8266 API calls.
 	char ssid[33];
@@ -74,9 +67,6 @@ void jswrap_ESP8266WiFi_connect(JsVar *jsv_ssid, JsVar *jsv_password, JsVar *cal
 	password[len]='\0';
 
     jsiConsolePrintf("jswrap_ESP8266WiFi_connect: %s - %s\r\n", ssid, password);
-
-	// Register
-	wifi_set_event_handler_cb(wifiEventHandler);
 
     // Set the WiFi mode of the ESP8266
 	wifi_set_opmode_current(STATION_MODE);
@@ -100,12 +90,16 @@ void jswrap_ESP8266WiFi_connect(JsVar *jsv_ssid, JsVar *jsv_password, JsVar *cal
 	jsiConsolePrintf("E\n");
 } // End of jswrap_ESP8266WiFi_connect
 
+
+/**
+ * Determine the list of access points available to us.
+ */
 /*JSON{
-  "type" : "staticmethod",
-  "class" : "ESP8266WiFi",
-  "name" : "getAccessPoints",
+  "type"     : "staticmethod",
+  "class"    : "ESP8266WiFi",
+  "name"     : "getAccessPoints",
   "generate" : "jswrap_ESP8266WiFi_getAccessPoints",
-    "params" : [
+  "params"   : [
     ["callback","JsVar","Function to call back when access points retrieved."]
   ]
 }*/
@@ -130,10 +124,13 @@ void jswrap_ESP8266WiFi_getAccessPoints(JsVar *callback) {
 	jsiConsolePrint("< ESP8266WiFi_getAccessPoints\n");
 } // End of jswrap_ESP8266WiFi_getAccessPoints
 
+/**
+ * Disconnect the station from the access point.
+ */
 /*JSON{
-  "type" : "staticmethod",
-  "class" : "ESP8266WiFi",
-  "name" : "disconnect",
+  "type"     : "staticmethod",
+  "class"    : "ESP8266WiFi",
+  "name"     : "disconnect",
   "generate" : "jswrap_ESP8266WiFi_disconnect"
 }*/
 void jswrap_ESP8266WiFi_disconnect() {
@@ -142,22 +139,112 @@ void jswrap_ESP8266WiFi_disconnect() {
 
 
 /*JSON{
-  "type" : "staticmethod",
-  "class" : "ESP8266WiFi",
-  "name" : "restart",
+  "type"     : "staticmethod",
+  "class"    : "ESP8266WiFi",
+  "name"     : "restart",
   "generate" : "jswrap_ESP8266WiFi_restart"
 }*/
 void jswrap_ESP8266WiFi_restart() {
 	system_restart();
 } // End of jswrap_ESP8266WiFi_restart
 
-
+/**
+ * Register a callback function that will be invoked when a WiFi event is detected.
+ */
 /*JSON{
-  "type" : "staticmethod",
-  "class" : "ESP8266WiFi",
-  "name" : "getRstInfo",
+  "type"     : "staticmethod",
+  "class"    : "ESP8266WiFi",
+  "name"     : "onWiFiEvent",
+  "generate" : "jswrap_ESP8266WiFi_onWiFiEvent",
+  "params"   : [
+    ["callback","JsVar","WiFi event callback"]
+  ]
+}*/
+void jswrap_ESP8266WiFi_onWiFiEvent(JsVar *callback) {
+	// If the callback is null
+	if (callback == NULL || jsvIsNull(callback)) {
+		if (jsWiFiEventCallback != NULL) {
+			jsvUnLock(jsWiFiEventCallback);
+		}
+		jsWiFiEventCallback = NULL;
+		return;
+	}
+
+	if (!jsvIsFunction(callback)) {
+	    jsExceptionHere(JSET_ERROR, "No callback.");
+		return;
+	}
+
+	// We are about to save a new global WiFi even callback handler.  If we have previously
+	// had one, we need to unlock it so that we don't leak memory.
+	if (jsWiFiEventCallback != NULL) {
+		jsvUnLock(jsWiFiEventCallback);
+	}
+
+	// Save the global WiFi event callback handler.
+	jsWiFiEventCallback = jsvLockAgainSafe(callback);
+
+	// Register
+	wifi_set_event_handler_cb(wifiEventHandler);
+} // End of jswrap_ESP8266WiFi_onWiFiEvent
+
+/**
+ * Set whether or not the ESP8266 will perform an auto connect on startup.
+ * A value of true means it will while a value of false means it won't.
+ */
+/*JSON{
+  "type"     : "staticmethod",
+  "class"    : "ESP8266WiFi",
+  "name"     : "setAutoConnect",
+  "generate" : "jswrap_ESP8266WiFi_setAutoConnect",
+  "params"   : [
+    ["autoconnect","JsVar","True if we wish to auto connect."]
+  ]
+}*/
+void jswrap_ESP8266WiFi_setAutoConnect(JsVar *autoconnect) {
+	os_printf("Auto connect is: %d\n", autoconnect);
+	// Check that we have been passed a boolean ... if not, nothing to do here.
+	if (!jsvIsBoolean(autoconnect)) {
+		return;
+	}
+
+	uint8 newValue = jsvGetBool(autoconnect);
+	os_printf("New value: %d\n", newValue);
+	os_printf("jswrap_ESP8266WiFi_setAutoConnect -> Something breaks here :-(\n");
+
+	uart_rx_intr_disable(0);
+	wifi_station_set_auto_connect(newValue);
+	uart_rx_intr_disable(1);
+	os_printf("Autoconnect changed\n");
+} // End of jswrap_ESP8266WiFi_setAutoconnect
+
+
+/**
+ * Retrieve whether or not the ESP8266 will perform an auto connect on startup.
+ * A value of 1 means it will while a value of zero means it won't.
+ */
+/*JSON{
+  "type"     : "staticmethod",
+  "class"    : "ESP8266WiFi",
+  "name"     : "getAutoConnect",
+  "generate" : "jswrap_ESP8266WiFi_getAutoConnect",
+  "return"   : ["JsVar","A boolean representing our auto connect status"]
+}*/
+JsVar *jswrap_ESP8266WiFi_getAutoConnect() {
+	uint8 result = wifi_station_get_auto_connect();
+	return jsvNewFromBool(result);
+} // End of jswrap_ESP8266WiFi_getAutoconnect
+
+/**
+ * Retrieve the reset information that is stored when event the ESP8266 resets.
+ * The result will be a JS object containing the details.
+ */
+/*JSON{
+  "type"     : "staticmethod",
+  "class"    : "ESP8266WiFi",
+  "name"     : "getRstInfo",
   "generate" : "jswrap_ESP8266WiFi_getRstInfo",
-  "return" : ["JsVar","A Restart Object"],
+  "return"   : ["JsVar","A Restart Object"],
   "return_object" : "Restart"
 }*/
 JsVar *jswrap_ESP8266WiFi_getRstInfo() {
@@ -174,30 +261,83 @@ JsVar *jswrap_ESP8266WiFi_getRstInfo() {
 } // End of jswrap_ESP8266WiFi_getRstInfo
 
 /*JSON{
-  "type" : "staticmethod",
-  "class" : "ESP8266WiFi",
-  "name" : "getIPInfo",
+  "type"     : "staticmethod",
+  "class"    : "ESP8266WiFi",
+  "name"     : "getAddressAsString",
+  "generate" : "jswrap_ESP8266WiFi_getAddressAsString",
+  "params"   : [
+    ["address","JsVar","An integer value representing an ipaddress."]
+  ],
+  "return"   : ["JsVar","A String"]
+}*/
+JsVar *jswrap_ESP8266WiFi_getAddressAsString(JsVar *address) {
+	uint32 iAddress = (uint32)jsvGetInteger(address);
+	os_printf("Out IP is %d\n", iAddress);
+	return networkGetAddressAsString((uint8 *)&iAddress, 4, 10, '.');
+} // End of jswrap_ESP8266WiFi_getAddressAsString
+
+/**
+ * Retrieve the IP information about this network interface and return a JS
+ * object that contains its details.  The object will have the following
+ * properties defined upon it:
+ * o ip - The IP address of the interface.
+ * o netmask - The netmask of the interface.
+ * o gw - The gateway to reach when transmitting through the interface.
+ */
+/*JSON{
+  "type"     : "staticmethod",
+  "class"    : "ESP8266WiFi",
+  "name"     : "getIPInfo",
   "generate" : "jswrap_ESP8266WiFi_getIPInfo",
-  "return" : ["JsVar","A IPInfo Object"],
+  "return"   : ["JsVar","A IPInfo Object"],
   "return_object" : "IPInfo"
 }*/
 JsVar *jswrap_ESP8266WiFi_getIPInfo() {
-	char ipString[20];
 	struct ip_info info;
 	wifi_get_ip_info(0, &info);
 
 	JsVar *ipInfo = jspNewObject(NULL, "Restart");
-	ipAddrToString(info.ip, ipString);
-	jsvObjectSetChild(ipInfo, "ip", jsvNewFromString(ipString));
-
-	ipAddrToString(info.netmask, ipString);
-	jsvObjectSetChild(ipInfo, "netmask", jsvNewFromString(ipString));
-
-	ipAddrToString(info.gw, ipString);
-	jsvObjectSetChild(ipInfo, "gw", jsvNewFromString(ipString));
+	jsvObjectSetChild(ipInfo, "ip", jsvNewFromInteger(info.ip.addr));
+	jsvObjectSetChild(ipInfo, "netmask", jsvNewFromInteger(info.netmask.addr));
+	jsvObjectSetChild(ipInfo, "gw", jsvNewFromInteger(info.gw.addr));
 	return ipInfo;
 } // End of jswrap_ESP8266WiFi_getIPInfo
 
+
+/**
+ * Query the station configuration and return a JS object that represents the
+ * current settings.  The object will have the following properties:
+ *
+ * o ssid - The network identity of the access point
+ * o password - The password to use to connect to the access point
+ *
+ */
+/*JSON{
+  "type"     : "staticmethod",
+  "class"    : "ESP8266WiFi",
+  "name"     : "getStationConfig",
+  "generate" : "jswrap_ESP8266WiFi_getStationConfig",
+  "return"   : ["JsVar","A Station Config"],
+  "return_object" : "StationConfig"
+}*/
+JsVar *jswrap_ESP8266WiFi_getStationConfig() {
+	struct station_config config;
+	wifi_station_get_config(&config);
+	JsVar *jsConfig = jspNewObject(NULL, "StationConfig");
+	//char ssid[33];
+	//nullTerminateString(ssid, (char *)config.ssid, 32);
+	jsvObjectSetChild(jsConfig, "ssid", jsvNewFromString((char *)config.ssid));
+	//char password[65];
+	//nullTerminateString(password, (char *)config.password, 64);
+	jsvObjectSetChild(jsConfig, "password", jsvNewFromString((char *)config.password));
+	return jsConfig;
+} // End of jswrap_ESP8266WiFi_getStationConfig
+
+static char *nullTerminateString(char *target, char *source, int sourceLength) {
+	os_strncpy(target, sourceLength, source);
+	target[sourceLength-1] = '\0';
+	return target;
+}
 
 static void setupJsNetwork() {
 	JsNetwork net;
@@ -279,9 +419,13 @@ static void scanCB(void *arg, STATUS status) {
  * WiFi event has occurred.
  */
 static void sendWifiEvent(uint32 eventType, JsVar *details) {
+	// We need to check that we actually have an event callback handler because
+	// it might have been disabled/removed.
 	if (jsWiFiEventCallback == NULL) {
 		return;
 	}
+
+	// Build a callback event.
 	JsVar *params[2];
 	params[0] = jsvNewFromInteger(eventType);
 	params[1] = details;
@@ -333,6 +477,9 @@ static void wifiEventHandler(System_Event_t *event) {
 	}
 } // End of wifiEventHandler
 
+// Note: This may be a duplicate ... it appears that we may have an existing function
+// in network.c which does exactly this and more!!
+//
 static void ipAddrToString(struct ip_addr addr, char *string) {
 	os_sprintf(string, "%d.%d.%d.%d", ((char *)&addr)[0], ((char *)&addr)[1], ((char *)&addr)[2], ((char *)&addr)[3]);
-}
+} // End of ipAddrToString

@@ -810,4 +810,11 @@ uart_init_2(UartBautRate uart0_br, UartBautRate uart1_br)
     os_install_putc1((void *)uart1_write_char);//print output at UART1
 }
 
-
+/**
+ * Discard any data in the RX buffer.
+ */
+int uart_rx_discard() {
+	int oldRxBufferLen = rxBufferLen;
+	rxBufferLen = 0;
+	return oldRxBufferLen;
+} // End of uart_rx_discard
