@@ -90,8 +90,6 @@ void jswrap_ESP8266WiFi_connect(JsVar *jsv_ssid, JsVar *jsv_password, JsVar *cal
 	} else {
 		os_strcpy(stationConfig.password, "");
 	}
-	//os_strcpy(stationConfig.ssid, "sweetie");
-	//os_strcpy(stationConfig.password, "kolban12");
 	jsiConsolePrintf("C\n");
 	// Set the WiFi configuration
 	wifi_station_set_config(&stationConfig);
