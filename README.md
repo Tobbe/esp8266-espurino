@@ -1,5 +1,7 @@
 # The ESP8266 Espruino project
-This project is the temporary repository for the work in porting Espruino to the ESP8266.
+This project is the temporary repository for the work in porting Espruino to the ESP8266. 
+
+Join our online chat at [![Gitter](https://badges.gitter.im/gitterHQ/gitter.svg)](https://gitter.im/aplikatika/Espruino-on-ESP8266)
 
 The goal of the project is to take the source code of the Espruino project and add the ESP8266 as a properly supported "board"
 which will complement all the other boards supported by Espruino.  It is hoped that few (if any) changes will be needed to the
