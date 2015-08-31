@@ -2,6 +2,7 @@
 #include <user_interface.h>
 #include <mem.h>
 #include <osapi.h>
+#include <ping.h>
 
 #define ESP8266_ON_ACCESS_POINTS "#accessPoints"
 
@@ -11,19 +12,19 @@ typedef long long int64_t;
 #include "jswrap_ESP8266WiFi.h"
 #include "jsinteractive.h" // Pull inn the jsiConsolePrint function
 #include "network.h"
+#include "jswrap_net.h"
 
 // Forward declaration of functions.
 static void scanCB(void *arg, STATUS status);
 static void wifiEventHandler(System_Event_t *event);
 static void ipAddrToString(struct ip_addr addr, char *string);
 static char *nullTerminateString(char *target, char *source, int sourceLength);
+static void setupJsNetwork();
+static void pingRecvCB();
 
 static JsVar *jsScanCallback;
 static JsVar *jsWiFiEventCallback;
-
-static void init() {
-	// Intialize the ESP8266 board support.
-}
+static struct ping_option pingOpt;
 
 // Let's define the JavaScript class that will contain our `world()` method. We'll call it `Hello`
 /*JSON{
@@ -333,6 +334,95 @@ JsVar *jswrap_ESP8266WiFi_getStationConfig() {
 	return jsConfig;
 } // End of jswrap_ESP8266WiFi_getStationConfig
 
+
+/*JSON{
+  "type"     : "staticmethod",
+  "class"    : "ESP8266WiFi",
+  "name"     : "init",
+  "generate" : "jswrap_ESP8266WiFi_init"
+}*/
+void jswrap_ESP8266WiFi_init() {
+	os_printf("> jswrap_ESP8266WiFi_init\n");
+	netInit_esp8266_board();
+	setupJsNetwork();
+	networkState = NETWORKSTATE_ONLINE;
+	os_printf("< jswrap_ESP8266WiFi_init\n");
+}
+
+/**
+ * Return the ESP8266 connection status.  This is an integer value defined as:
+ * o 0 - STATION_IDLE
+ * o 1 - STATION_CONNECTING
+ * o 2 - STATION_WRONG_PASSWORD
+ * o 3 - STATION_NO_AP_FOUND
+ * o 4 - STATION_CONNECT_FAIL
+ * o 5 - STATION_GOT_IP
+ */
+/*JSON{
+  "type"     : "staticmethod",
+  "class"    : "ESP8266WiFi",
+  "name"     : "getConnectStatus",
+  "generate" : "jswrap_ESP8266WiFi_getConnectStatus",
+  "return"   : ["JsVar","A connection status"]
+}*/
+JsVar *jswrap_ESP8266WiFi_getConnectStatus() {
+	uint8 status = wifi_station_get_connect_status();
+	return jsvNewFromInteger(status);
+} // End of jswrap_ESP8266WiFi_getConnectStatus
+
+/**
+ * Test: Perform a socket connection to a partner system.
+ */
+/*JSON{
+  "type"     : "staticmethod",
+  "class"    : "ESP8266WiFi",
+  "name"     : "socketConnect",
+  "generate" : "jswrap_ESP8266WiFi_socketConnect",
+  "params"   : [
+    ["options","JsVar","Some kind of options."],
+    ["callback","JsVar","Some kind of callback."]
+  ],
+  "return"   : ["JsVar","A connection object"]
+}*/
+JsVar *jswrap_ESP8266WiFi_socketConnect(JsVar *options, JsVar *callback) {
+	os_printf("Network state = %d\n", networkState);
+	JsVar *ret = jswrap_net_connect(options, callback, ST_NORMAL);
+	return ret;
+} // End of jswrap_ESP8266WiFi_socketConnect
+
+/*JSON{
+  "type"     : "staticmethod",
+  "class"    : "ESP8266WiFi",
+  "name"     : "socketEnd",
+  "generate" : "jswrap_ESP8266WiFi_socketEnd",
+  "params"   : [
+    ["socket","JsVar","The socket to be closed."],
+    ["data","JsVar","Optional data to be sent before close."]
+  ]
+}*/
+void jswrap_ESP8266WiFi_socketEnd(JsVar *socket, JsVar *data) {
+	jswrap_net_socket_end(socket, data);
+} // End of jswrap_ESP8266WiFi_socketEnd
+
+/*JSON{
+  "type"     : "staticmethod",
+  "class"    : "ESP8266WiFi",
+  "name"     : "ping",
+  "generate" : "jswrap_ESP8266WiFi_ping",
+  "params"   : [
+    ["ipAddr","JsVar","A string representation of an IP address."]
+  ]
+}*/
+void jswrap_ESP8266WiFi_ping(JsVar *ipAddr) {
+	char ipString[20];
+	int len = jsvGetString(ipAddr, ipString, sizeof(ipString)-1);
+	ipString[len] = '\0';
+	pingOpt.count = 5;
+	pingOpt.recv_function = pingRecvCB;
+	pingOpt.ip = networkParseIPAddress(ipString);
+	ping_start(&pingOpt);
+} // End of jswrap_ESP8266WiFi_ping
+
 static char *nullTerminateString(char *target, char *source, int sourceLength) {
 	os_strncpy(target, sourceLength, source);
 	target[sourceLength-1] = '\0';
@@ -345,7 +435,12 @@ static void setupJsNetwork() {
 	networkSet(&net);
 }
 
-
+/**
+ *
+ */
+static void pingRecvCB() {
+	os_printf("Received a ping response!\n");
+}
 
 /**
  * Callback function that is invoked at the culmination of a scan.

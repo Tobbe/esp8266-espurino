@@ -40,7 +40,24 @@ static uint32 lastTime;
 // The task queue for the app
 static os_event_t taskAppQueue[TASK_QUEUE_LENGTH];
 
+static bool suspendMainLoopFlag = false;
+static os_timer_t mainLoopSuspendTimer;
+
 // --- Functions
+
+void suspendMainLoop(uint32 interval) {
+	suspendMainLoopFlag = true;
+	os_timer_arm(&mainLoopSuspendTimer, interval, 0 /* No repeat */);
+}
+
+static void queueMainLoop() {
+	system_os_post(TASK_APP_QUEUE, TASK_APP_MAINLOOP, 0);
+}
+
+static void enableMainLoop() {
+	suspendMainLoopFlag = false;
+	queueMainLoop();
+}
 
 /**
  * The event handler for ESP8266 tasks as created by system_os_post() on the TASK_APP_QUEUE.
@@ -93,6 +110,9 @@ static void gotIpCallback() {
 } // End of gotIpCallback
 
 static void mainLoop() {
+	if (suspendMainLoopFlag == true) {
+		return;
+	}
 	jsiLoop();
 
 #ifdef EPS8266_BOARD_HEARTBEAT
@@ -103,7 +123,7 @@ static void mainLoop() {
 #endif
 
 	// Setup for another callback
-	system_os_post(TASK_APP_QUEUE, TASK_APP_MAINLOOP, 0);
+	queueMainLoop();
 } // End of mainLoop
 
 /**
@@ -128,7 +148,7 @@ static void initDone() {
 	TASK_QUEUE_LENGTH);
 
 	// Post the first event to get us going.
-	system_os_post(TASK_APP_QUEUE, TASK_APP_MAINLOOP, 0);
+	queueMainLoop();
 
 	return;
 } // End of initDone
@@ -155,5 +175,6 @@ void user_init() {
 	system_init_done_cb(initDone);
 	// Do NOT attempt to auto connect to an access point.
 	//wifi_station_set_auto_connect(0);
+	os_timer_setfn(&mainLoopSuspendTimer, enableMainLoop);
 }
 // End of file
